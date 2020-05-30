@@ -1,2 +1,4 @@
 # FBI-Risk-Analyzer
-A Flexible Log Analysis System Based on Golang, with Lua-Plugin Style like OpenResty.
+日志源: kafka
+数据缓存计数：redis
+规则文件：lua
