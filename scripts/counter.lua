@@ -78,7 +78,7 @@ end
 local function checker()
     local pipeline = redis.pipeline
     pipeline.new()
-    scanCheck(pipeline, "40x", 300, 3, 600)
+    scanCheck(pipeline, "40x", 300, 100, 600)
     pipeline.exec()
     pipeline.close()
 end
