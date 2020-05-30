@@ -33,7 +33,7 @@ FBI-Analyzer是一个灵活的日志分析系统，基于golang和lua。
 ### 灵活自定义的函数库
 
 以打印日志为例
-```
+```go
 func logging(L *lua.LState) int {
 
 	buf := new(bytes.Buffer)
