@@ -71,7 +71,7 @@ func hmset(L *lua.LState) int {
 
 	var err error
 	var result bool
-	result, err = db.RedSess.HMSet(L.CheckString(1), L.CheckString(2), L.CheckInt(4)).Result()
+	result, err = db.RedSess.HMSet(L.CheckString(1), L.CheckString(2), L.CheckInt(3)).Result()
 	L.Push(lua.LBool(result))
 	pushErr(L, err)
 	return 2
@@ -147,7 +147,7 @@ func phmset(L *lua.LState) int {
 	var err error
 	var result bool
 	pipeline := L.GetGlobal("pipeline").(*lua.LUserData).Value.(redis.Pipeliner)
-	result, err = pipeline.HMSet(L.CheckString(1), L.CheckString(2), L.CheckInt(4)).Result()
+	result, err = pipeline.HMSet(L.CheckString(1), L.CheckString(2), L.CheckInt(3)).Result()
 	L.Push(lua.LBool(result))
 	pushErr(L, err)
 	return 2

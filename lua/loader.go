@@ -32,6 +32,7 @@ func luaTime(L *lua.LState) int {
 
 	// 注册方法
 	mod := L.SetFuncs(L.NewTable(), timeFns)
+	mod.RawSet(lua.LString("zero"), lua.LNumber(1590829200))
 	L.Push(mod)
 	return 1
 }
