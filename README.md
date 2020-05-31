@@ -151,9 +151,35 @@ local zero = time.zero -- 1590829200, 基准时间，用于跟当前时间做差
 
 ### 说明
 
-目前只写了kafka的数据输入，且日志格式为json。
+目前只写了kafka的数据输入，且日志格式为json，后期看情况加。
 
 如需对接自家日志，需要在[rule/struct.go](https://github.com/C4o/FBI-Analyzer/blob/master/rule/struct.go)中定义下日志格式，可以网上找json2gostrcut的转换；再在[lua/http.go](https://github.com/C4o/FBI-Analyzer/blob/master/lua/http.go)对照日志struct进行对应参数对接即可。
+
+```go
+type AccessLog struct {
+	Host    string  `json:"host"`    // WAF字段，域名
+	Status  int     `json:"status"`  // WAF字段，状态码
+	XFF     string  `json:"XFF"`     // WAF字段，X-Forwarded-for
+	...
+}
+
+// 注意下类型就好,lua里面数字都是number类型。
+func GetReqVar(L *lua.LState) int {
+
+	access := L.GetGlobal("access").(*lua.LUserData).Value.(*rule.AccessLog)
+	_ = L.CheckAny(1)
+	switch L.CheckString(2) {
+	case "host":
+		L.Push(lua.LString(access.Host))
+	case "status":
+		L.Push(lua.LNumber(access.Status))
+	case "XFF":
+		L.Push(lua.LString(access.XFF))
+	...
+	default:
+		L.Push(lua.LNil)
+}	
+```
 
 初次使用可通过打印一些变量来测试，例如
 ```lua
@@ -177,7 +203,7 @@ log(ERROR, "status is ", tostring(var.status), ", req is ", var.host, var,uri, "
 kafka三方库需要安装librdkafka，参照
 https://github.com/confluentinc/confluent-kafka-go#installing-librdkafka
 
-redis三方库前几天刚更新，参数变了，如果不会改的话，go get 7.3版本即可
+redis三方库前几天刚更新，每个执行函数的参数都加了个ctx，如果不会改的话，go get 7.3版本即可
 https://github.com/go-redis/redis/tree/v7
 ```
 
