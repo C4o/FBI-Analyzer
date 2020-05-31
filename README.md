@@ -34,7 +34,7 @@ FBI-Analyzer是一个灵活的日志分析系统，基于golang和lua，插件�
 
 动图中演示注释和运行打印日志方法来检测插件生效的速度。
 
-![image](examples/fbi-1.gif)
+![image](https://p1.ssl.qhimg.com/t01cfba4b44c7c893fa.gif)
 
 ### 灵活自定义的函数库
 
@@ -200,7 +200,7 @@ log(ERROR, "status is ", tostring(var.status), ", req is ", var.host, var,uri, "
 
 ### 项目运行流程
 
-![image](examples/fbi-flow.jpg)
+![image](https://p0.ssl.qhimg.com/t016e8931d1c6cfe92f.png)
 
 ### 安装
 
@@ -300,7 +300,7 @@ go build main.go
 ## 本项目在现实中的应用
 
 ### WAF体系
-![image](examples/waf.jpg)
+![image](https://p3.ssl.qhimg.com/t015b7079b7b1839010.png)
 
 ### 拦截中心
 项目地址：https://github.com/C4o/IUS
