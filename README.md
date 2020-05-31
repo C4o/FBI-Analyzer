@@ -1,10 +1,14 @@
 # FBI-Analyzer
 
-FBI-Analyzer是一个灵活的日志分析系统，基于golang和lua。
+FBI-Analyzer是一个灵活的日志分析系统，基于golang和lua，插件风格类似ngx-lua。
 
 使用者只需要编写简单的lua逻辑就可以实现各类需求，可作为WAF的辅助系统进行安全分析。
 
-插件风格类似ngx-lua，对于使用openresty二次开发WAF的使用者再合适不过了。可快速迁移waf插件至本系统，避免插件过多导致WAF性能下降。
+可快速迁移waf中行为分析插件(非实时拦截需求，需要缓存计算数据的逻辑)至本系统，避免插件在处理请求时发起过多对数据缓存(redis等)的请求而导致WAF性能下降，帮助waf减负。
+
+实现这个项目的目的其实也是加深下对lua虚拟机的认识，以及其他语言通过插件的方式调用lua脚本的工作原理。当然使用lua插件化的性能最佳的语言肯定是C，但是因为太菜了，所以只能以golang来实现，但是就目前观察看下来，处理性能还是可以的。
+
+跳过介绍，使用说明[点击](https://github.com/C4o/FBI-Analyzer#%E9%A1%B9%E7%9B%AE%E8%BF%90%E8%A1%8C%E6%B5%81%E7%A8%8B%E5%92%8C%E6%89%8B%E5%86%8C)跳转。
 
 ## 特点
 
@@ -12,21 +16,23 @@ FBI-Analyzer是一个灵活的日志分析系统，基于golang和lua。
 
 简单的需求在配置文件中完成其实挺不错的，但是在一些较为复杂的需求面前，配置文件写出来的可能比较抽象，或者说为了简化配置就要为某个单独的需求专门在主项目里写一段专门用来处理的逻辑，可以是可以，但没必要。
 
-在使用openresty一段时间后，发现灵活的插件真的会减轻不少的工作量，才有了现在这个项目。
-
-基于一个相对复杂的小需求来进行插件编写，[点击](https://github.com/C4o/FBI-Analyzer/blob/master/scripts/counter.lua)跳转插件示例。
+在使用openresty一段时间后，发现灵活的插件真的会减轻不少的工作量。接下来基于一个相对复杂的小需求来进行插件编写，[点击](https://github.com/C4o/FBI-Analyzer/blob/master/scripts/counter.lua)跳转插件示例。
 
 ```
 需求：对5分钟内的访问状态码40x的ip进行针对统计，5分钟内超过100次的打上标签锁定10分钟，供WAF进行拦截。
-```
 
+这种肯定也可以在waf中写插件，但是当类似需求多了，那么一条请求处理就可能会产生多次请求，影响waf性能。
+这样的话只让waf发起一条请求读取下分析结果就可以直接进行拦截，将工作量转移给旁路系统，不影响线上服务。
+```
 ### 插件秒级生效
 
 在线上环境运行示例风控插件，能涉及到的业务总QPS高峰大概有十万。(虽然是背着领导偷偷跑的，但是因为完全旁路于业务，所以问题不大。
 
-动图中演示注释和运行打印日志方法来检测插件生效的速度。
+插件目前使用主动监测的方式进行更新(说白了，for循环)，但是其实可以使用inotify通过修改事件来驱动插件更新，我这里没写是因为我还没写完服务端更新的操作，vim编辑保存文件会删除旧文件创建新文件导致文件监控失败，有点憨批所以没搞。[LogFarmer](https://github.com/C4o/LogFarmer)中实时传日志的方式就是使用事件驱动，实现比较简单。
 
-插件目前使用主动监测的方式进行更新(说白了，for循环)，但是其实可以使用inotify通过修改事件来驱动插件更新，我这里没写是因为我还没写完服务端更新的操作，vim编辑保存文件会删除旧文件创建新文件导致文件监控失败，有点憨批所以没搞。具体可参照[LogFarmer](https://github.com/C4o/LogFarmer)。
+插件更新时会自动编译缓存，供协程调用，避免每次都会要编译脚本运行。
+
+动图中演示注释和运行打印日志方法来检测插件生效的速度。
 
 ![image](examples/fbi-1.gif)
 
@@ -63,7 +69,8 @@ local ok, err = redis.incr("key", "field")
 
 fbi
 ```lua
--- 项目变量，下面包含var变量
+-- 项目变量
+-- 下面包含var变量，类似openresty
 local var = fbi.var
 print(var.status) 
 -- 项目回显打印 200
@@ -228,6 +235,66 @@ topic:
 offset: latest
 # 项目日志配置
 path: Analyzer.log
+```
+
+### 使用方式
+
+```
+git clone https://github.com/C4o/FBI-Analyzer
+go build main.go
+./main
+```
+
+1.如果没有kafka，没有关系，修改main.go的最后几行即可。通过print或log方法进行输出。
+
+原始代码
+```go
+// 初始化kafka配置
+	kaf := db.Kafka{
+		Broker:  conf.Cfg.Broker,
+		GroupID: conf.Cfg.GroupID,
+		Topic:   conf.Cfg.Topic,
+		Offset:  conf.Cfg.Offset,
+	}
+	// 启动lua进程
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go lua.LuaThread(i)
+		go kaf.Consumer(lua.Kchan, i)
+	}
+	// 本地模拟消费者，不使用kafka
+	//go lua.TestConsumer()
+	// redis健康检查卡住主进程，redis异常断开程序终止
+	red.Health()
+```
+更新代码
+```go
+// 初始化kafka配置
+	//kaf := db.Kafka{
+	//Broker:  conf.Cfg.Broker,
+	//GroupID: conf.Cfg.GroupID,
+	//Topic:   conf.Cfg.Topic,
+	//Offset:  conf.Cfg.Offset,
+	//}
+	// 启动lua进程
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go lua.LuaThread(i)
+		//go kaf.Consumer(lua.Kchan, i)
+	}
+	// 本地模拟消费者，不使用kafka
+	go lua.TestConsumer()
+	// redis健康检查卡住主进程，redis异常断开程序终止
+	red.Health()
+```
+
+2.如果模块或参数使用不对，可在日志中查看lua脚本哪一行报错。
+
+```
+[root@localhost FBI-Analyzer]# cat Analyzer.log | grep "#" | head -n 5
+2020/05/27 13:28:21 [error] Consumer error: 10.205.241.146:9092/bootstrap: Connect to ipv4#10.205.241.146:9092 failed: No route to host (after 4ms in state CONNECT) (<nil>)
+2020/05/27 13:41:44 [error] coroutines failed : scripts/counter.lua:5: bad argument #3 to incr (value expected).
+2020/05/27 13:41:49 [error] coroutines failed : scripts/counter.lua:5: bad argument #3 to incr (value expected).
+2020/05/27 13:41:54 [error] coroutines failed : scripts/counter.lua:5: bad argument #3 to incr (value expected).
+2020/05/27 13:41:59 [error] coroutines failed : scripts/counter.lua:5: bad argument #3 to incr (value expected).
 ```
 
 ## 本项目在现实中的应用
