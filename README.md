@@ -149,6 +149,8 @@ local zero = time.zero -- 1590829200, 基准时间，用于跟当前时间做差
 
 ## 项目运行流程和手册
 
+### 说明
+
 目前只写了kafka的数据输入，且日志格式为json。
 
 如需对接自家日志，需要在[rule/struct.go](https://github.com/C4o/FBI-Analyzer/blob/master/rule/struct.go)中定义下日志格式，可以网上找json2gostrcut的转换；再在[lua/http.go](https://github.com/C4o/FBI-Analyzer/blob/master/lua/http.go)对照日志struct进行对应参数对接即可。
@@ -162,6 +164,10 @@ local ERROR = fbi.ERROR
 log(ERROR, "status is ", tostring(var.status), ", req is ", var.host, var,uri, "?", var.query)
 -- 可能输出 [error] status is 200, req is www.test.com/path/a?id=1
 ```
+
+### 项目运行流程
+
+![image](examples/fbi-flow.jpg)
 
 ### 安装
 
