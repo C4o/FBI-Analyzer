@@ -49,6 +49,7 @@ local function scanCheck(pipeline, tag, interval, max, lock)
     if l ~= nil then
         if now - l < lock then
             log(ERROR, "old bad ip : ", var.addr)
+            pipeline.hmset(rdkey, "last-lock", now)
             return
         end
     end
