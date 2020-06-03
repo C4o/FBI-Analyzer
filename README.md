@@ -2,11 +2,13 @@
 
 FBI-Analyzer是一个灵活的日志分析系统，基于golang和lua，插件风格类似ngx-lua。
 
-使用者只需要编写简单的lua逻辑就可以实现各类需求，可作为WAF的辅助系统进行安全分析。
+使用者只需要编写简单的lua逻辑就可以实现golang能实现的所有需求，[点击](https://github.com/C4o/FBI-Analyzer#%E9%A1%B9%E7%9B%AE%E8%BF%90%E8%A1%8C%E6%B5%81%E7%A8%8B)跳转实现原理。现实中可作为WAF的辅助系统进行安全分析，[点击](https://github.com/C4o/FBI-Analyzer#%E6%9C%AC%E9%A1%B9%E7%9B%AE%E5%9C%A8%E7%8E%B0%E5%AE%9E%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8)跳转实例。
 
 可快速迁移waf中行为分析插件(非实时拦截需求，需要缓存计算数据的逻辑)至本系统，避免插件在处理请求时发起过多对数据缓存(redis等)的请求而导致WAF性能下降，帮助waf减负。
 
-实现这个项目的目的其实也是加深下对lua虚拟机的认识，以及其他语言通过插件的方式调用lua脚本的工作原理。当然使用lua插件化的性能最佳的语言肯定是C，但是因为太菜了，所以只能以golang来实现，但是就目前观察看下来，处理性能还是可以的。
+实现这个项目的目的其实也是加深下对lua虚拟机的认识，以及其他语言通过插件的方式调用lua脚本的工作原理，本项目因为只是单纯的lua虚拟机，不是luaJIT，所以不能使用ffi也不能引用三方so的方法。
+
+当然使用lua插件化的性能最佳的语言肯定是C，但是因为太菜了，所以只能以golang来实现，但是就目前观察看下来，处理性能还是可以的。
 
 跳过介绍，使用说明[点击](https://github.com/C4o/FBI-Analyzer#%E9%A1%B9%E7%9B%AE%E8%BF%90%E8%A1%8C%E6%B5%81%E7%A8%8B%E5%92%8C%E6%89%8B%E5%86%8C)跳转。
 
@@ -34,7 +36,7 @@ FBI-Analyzer是一个灵活的日志分析系统，基于golang和lua，插件�
 
 动图中演示注释和运行打印日志方法来检测插件生效的速度。
 
-![image](https://p1.ssl.qhimg.com/t01cfba4b44c7c893fa.gif)
+![image](examples/fbi-1.gif)
 
 ### 灵活自定义的函数库
 
@@ -200,7 +202,7 @@ log(ERROR, "status is ", tostring(var.status), ", req is ", var.host, var,uri, "
 
 ### 项目运行流程
 
-![image](https://p0.ssl.qhimg.com/t016e8931d1c6cfe92f.png)
+![image](examples/fbi-flow.jpg)
 
 ### 安装
 
@@ -245,11 +247,17 @@ go build main.go
 ./main
 ```
 
-1.如果没有kafka，没有关系，修改main.go的最后几行即可。通过print或log方法进行输出。
+1.如果没有redis和kafka，没有关系，修改main.go的最后几行即可。通过print或log方法进行输出。
 
 原始代码
 ```go
-// 初始化kafka配置
+    // 初始化redis,连接和健康检查
+	red := db.Redis{
+		RedisAddr: conf.Cfg.RedAddr,
+		RedisPass: conf.Cfg.RedPass,
+		RedisDB:   conf.Cfg.DB,
+	}
+    // 初始化kafka配置
 	kaf := db.Kafka{
 		Broker:  conf.Cfg.Broker,
 		GroupID: conf.Cfg.GroupID,
@@ -268,7 +276,13 @@ go build main.go
 ```
 更新代码
 ```go
-// 初始化kafka配置
+    // 初始化redis,连接和健康检查
+	//red := db.Redis{
+	//	RedisAddr: conf.Cfg.RedAddr,
+	//	RedisPass: conf.Cfg.RedPass,
+	//	RedisDB:   conf.Cfg.DB,
+	//}
+    // 初始化kafka配置
 	//kaf := db.Kafka{
 	//Broker:  conf.Cfg.Broker,
 	//GroupID: conf.Cfg.GroupID,
@@ -281,9 +295,9 @@ go build main.go
 		//go kaf.Consumer(lua.Kchan, i)
 	}
 	// 本地模拟消费者，不使用kafka
-	go lua.TestConsumer()
+	lua.TestConsumer()
 	// redis健康检查卡住主进程，redis异常断开程序终止
-	red.Health()
+	// red.Health()
 ```
 
 2.如果模块或参数使用不对，可在日志中查看lua脚本哪一行报错。
@@ -300,7 +314,7 @@ go build main.go
 ## 本项目在现实中的应用
 
 ### WAF体系
-![image](https://p3.ssl.qhimg.com/t015b7079b7b1839010.png)
+![image](examples/waf.jpg)
 
 ### 拦截中心
 项目地址：https://github.com/C4o/IUS
