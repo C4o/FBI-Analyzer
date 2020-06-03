@@ -57,6 +57,33 @@ func logging(L *lua.LState) int {
 }
 ```
 
+### 丰富的三方依赖支撑
+
+golang能够使用的所有方法都可以被lua使用，通过如上的定义方式，添加进lua虚拟机供lua使用。
+
+例如样例lua策略脚本中，使用的redis模块和方法实际是使用的golang内的redis三方库。
+
+```go
+// 注册给lua虚拟机的golang函数
+var rdsFns = map[string]lua.LGFunction{
+		"incr":   incr,
+		"hmget":  hmget,
+		"hmset":  hmset,
+		"expire": expire,
+		"delete": delete,
+	}
+// redis的递增函数
+func incr(L *lua.LState) int {
+
+	var err error
+	var result int64
+	result, err = db.RedSess.HIncrBy(L.CheckString(1), L.CheckString(2), 1).Result()
+	L.Push(lua.LNumber(result))
+	pushErr(L, err)
+	return 2
+}
+```
+
 ## 已内置的lua函数库和变量
 
 ```lua
