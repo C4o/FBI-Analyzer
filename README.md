@@ -44,7 +44,7 @@ FBI-Analyzer是一个灵活的日志分析系统，基于golang和lua，插件�
 
 以打印日志为例
 
-```
+```go
 func logging(L *lua.LState) int {
 
     buf := new(bytes.Buffer)
@@ -67,7 +67,7 @@ golang能够使用的所有方法都可以被lua使用，通过如上的定义�
 
 例如样例lua策略脚本中，使用的redis模块和方法实际是使用的golang内的redis三方库。
 
-```
+```go
 // 注册给lua虚拟机的golang函数
 var rdsFns = map[string]lua.LGFunction{
         "incr":   incr,
@@ -104,7 +104,7 @@ local ok, err = redis.incr("key", "field")
 
 fbi
 
-```
+```lua
 -- 项目变量
 -- 下面包含var变量，类似openresty
 local var = fbi.var
@@ -121,7 +121,7 @@ log(ERROR, "s1", "s2", "s3", ..., "sn")
 
 ```
 
-```
+```lua
 -- 写成lua的table是这样
 fbi = {
     var = {
@@ -157,7 +157,7 @@ pipeline
 
 redis
 
-```
+```lua
 -- 类型都是lua中的类型。ok是bool类型，err是nil或者string类型，result是string或number类型，str是string类型
 
 -- redis单条请求方法
@@ -186,7 +186,7 @@ pipeline.close()
 
 re
 
-```
+```lua
 -- 类型都是lua中的类型。ok是bool类型，err是nil或者string类型，str是string类型
 -- 项目在定义给lua用的golang正则方法时，缓存了每个待匹配模式，比如"^ab"，提升速度和性能
 local re = require("re")
@@ -197,7 +197,7 @@ local str, err = re.find("abcabcd", "^ab")
 
 time
 
-```
+```lua
 local time = require("time")
 local tu = time.unix() -- 时间戳
 local tf = time.format() -- 格式化时间 2020-05-31 00:15
@@ -213,7 +213,7 @@ local zero = time.zero -- 1590829200, 基准时间，用于跟当前时间做差
 
 如需对接自家日志，需要在[rule/struct.go](https://github.com/C4o/FBI-Analyzer/blob/master/rule/struct.go)中定义下日志格式，可以网上找json2gostrcut的转换；再在[lua/http.go](https://github.com/C4o/FBI-Analyzer/blob/master/lua/http.go)对照日志struct进行对应参数对接即可。
 
-```
+```go
 type AccessLog struct {
     Host    string  `json:"host"`    // WAF字段，域名
     Status  int     `json:"status"`  // WAF字段，状态码
@@ -242,7 +242,7 @@ func GetReqVar(L *lua.LState) int {
 
 初次使用可通过打印一些变量来测试，例如
 
-```
+```lua
 local var = fbi.var
 local log = fbi.log
 local ERROR = fbi.ERROR
@@ -277,7 +277,7 @@ https://github.com/go-redis/redis/tree/v7
 
 ### 配置文件样例
 
-```
+```yaml
 # redis配置
 redis: "127.0.0.1:6379"
 password: ""
@@ -306,7 +306,7 @@ go build main.go
 
 原始代码
 
-```
+```go
     // 初始化redis,连接和健康检查
     red := db.Redis{
         RedisAddr: conf.Cfg.RedAddr,
@@ -334,7 +334,7 @@ go build main.go
 
 更新代码
 
-```
+```go
     // 初始化redis,连接和健康检查
     //red := db.Redis{
     //    RedisAddr: conf.Cfg.RedAddr,
