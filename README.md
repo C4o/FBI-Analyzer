@@ -1,3 +1,9 @@
+# ngx-raw分支
+
+使用[ngx-go](github.com/tr3ee/ngx-go)来解析原始的nginx日志。
+
+无需事先在waf上把日志json格式化，且解析性能优于jsoniter。
+
 # FBI-Analyzer
 
 FBI-Analyzer是一个灵活的日志分析系统，基于golang和lua，插件风格类似ngx-lua。

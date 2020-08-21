@@ -5,8 +5,8 @@ import (
 	"FBI-Analyzer/rule"
 	"time"
 
-	"github.com/json-iterator/go"
 	"github.com/yuin/gopher-lua"
+	"github.com/tr3ee/ngx-go"
 )
 
 var (
@@ -61,13 +61,14 @@ func luaCoroutines(L *lua.LState, access rule.AccessLog, luaFuncs map[string]*lu
 	co.Close()
 }
 
-// 测试消费者
-func TestConsumer() {
-	var sample = []byte(`{"host":"www.k3f.xyz","warn":"nil","saddr":"192.168.123.1","status":200,"xff":"0.0.0.0","rule":"nil","size":67,"method":"POST","uri":"\/interface\/GetData.aspx","reqs":"1","uaddr":"192.168.122.222:80","time":"1590469755.764","port":"33556","app":"X业务","cdn":"nil","addr":"101.102.103.104","urt":0.019,"pass":"nil","query":"key=0.aaa","remote":"101.102.103.104","ref":"http:\/\/www.k3f.xyz\/testuri\/0","ua":"Mozilla\/5.0 (Windows NT 10.0; WOW64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/73.0.3683.86 Safari\/537.36","risk":"ok","uname":"www.k3f.xyz","conn":"74691190","local":"26\/May\/2020:13:09:15 +0800"}`)
+// 测试消费者，日志ngxRaw格式
+func TestConsumerRaw() {
+	var sampleRaw = []byte(`1.1.1.1 - - [20/Aug/2020:16:44:22 +0800] "GET /api/queryKey?sdkAppId=x&platform=ios&method=HMACSHA256&gateway=x HTTP/1.1" 403 62 "-" "0.000" "-" "PostmanRuntime/7.6.0" "-" "post-body-data" "-" uid:"-x_uid=id_value" "test-1.host.x.net" "-"`)
+	var sampleFmt = `$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$request_time" "$upstream_response_time" "$http_user_agent" "$http_x_forwarded_for" "$request_body" "$http_accesstoken" uid:"$uid_got$uid_set" "$host" "$http_cookie"`
 	var access rule.AccessLog
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	var ngxc, _ = ngx.Compile(sampleFmt)
 
-	json.Unmarshal(sample, &access)
+	ngxc.Unmarshal(sampleRaw, &access)
 	for {
 		access.Status += 1
 		Kchan <- access

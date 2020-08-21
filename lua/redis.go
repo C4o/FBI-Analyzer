@@ -4,7 +4,7 @@ import (
 	"FBI-Analyzer/db"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/yuin/gopher-lua"
 )
 
@@ -70,9 +70,11 @@ func incr(L *lua.LState) int {
 func hmset(L *lua.LState) int {
 
 	var err error
-	var result bool
-	result, err = db.RedSess.HMSet(L.CheckString(1), L.CheckString(2), L.CheckInt(3)).Result()
-	L.Push(lua.LBool(result))
+	var result string
+	tmpMap := make(map[string]interface{}, 1)
+	tmpMap[L.CheckString(2)] = L.CheckInt(3)
+	result, err = db.RedSess.HMSet(L.CheckString(1), tmpMap).Result()
+	L.Push(lua.LString(result))
 	pushErr(L, err)
 	return 2
 }
