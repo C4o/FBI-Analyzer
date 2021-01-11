@@ -105,19 +105,19 @@ func main() {
 	}
 	red.Conn()
 	// 初始化kafka配置
-	kaf := db.Kafka{
-		Broker:  conf.Cfg.Broker,
-		GroupID: conf.Cfg.GroupID,
-		Topic:   conf.Cfg.Topic,
-		Offset:  conf.Cfg.Offset,
-	}
+	//kaf := db.Kafka{
+	//	Broker:  conf.Cfg.Broker,
+	//	GroupID: conf.Cfg.GroupID,
+	//	Topic:   conf.Cfg.Topic,
+	//	Offset:  conf.Cfg.Offset,
+	//}
 	// 启动lua进程
 	for i := 0; i < runtime.NumCPU(); i++ {
 		go lua.LuaThread(i)
-		go kaf.Consumer(lua.Kchan, i)
+		//go kaf.Consumer(lua.Kchan, i)
 	}
 	// 本地模拟消费者，不使用kafka
-	//go lua.TestConsumer()
+	go lua.TestConsumer()
 	// redis健康检查卡住主进程，redis异常断开程序终止
 	red.Health()
 }

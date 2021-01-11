@@ -70,9 +70,11 @@ func incr(L *lua.LState) int {
 func hmset(L *lua.LState) int {
 
 	var err error
-	var result bool
-	result, err = db.RedSess.HMSet(L.CheckString(1), L.CheckString(2), L.CheckInt(3)).Result()
-	L.Push(lua.LBool(result))
+	var result string
+	fmap := make(map[string]interface{})
+	fmap[L.CheckString(2)] = L.CheckInt(3)
+	result, err = db.RedSess.HMSet(L.CheckString(1), fmap).Result()
+	L.Push(lua.LString(result))
 	pushErr(L, err)
 	return 2
 }
@@ -145,10 +147,12 @@ func pincr(L *lua.LState) int {
 func phmset(L *lua.LState) int {
 
 	var err error
-	var result bool
+	var result string
 	pipeline := L.GetGlobal("pipeline").(*lua.LUserData).Value.(redis.Pipeliner)
-	result, err = pipeline.HMSet(L.CheckString(1), L.CheckString(2), L.CheckInt(3)).Result()
-	L.Push(lua.LBool(result))
+	fmap := make(map[string]interface{})
+	fmap[L.CheckString(2)] = L.CheckInt(3)
+	result, err = pipeline.HMSet(L.CheckString(1), fmap).Result()
+	L.Push(lua.LString(result))
 	pushErr(L, err)
 	return 2
 }

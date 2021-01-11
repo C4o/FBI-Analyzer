@@ -25,7 +25,7 @@ func (r *Redis) Conn() {
 		Addr:       r.RedisAddr,
 		Password:   r.RedisPass,
 		PoolSize:   10,
-		MaxConnAge: time.Duration(600 * time.Second),
+		MaxConnAge: 600 * time.Second,
 	})
 }
 
